@@ -1,0 +1,109 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://backtest-client.local/schema/strategy-spec.v1.json",
+  "title": "StrategySpecV1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "ticker", "timeframe", "direction", "indicators", "exits"],
+  "properties": {
+    "version": {
+      "const": "1.0"
+    },
+    "ticker": {
+      "type": "string",
+      "minLength": 1
+    },
+    "timeframe": {
+      "type": "string",
+      "minLength": 1
+    },
+    "direction": {
+      "enum": ["long", "short", "both"]
+    },
+    "indicators": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "type", "params"],
+        "properties": {
+          "name": { "type": "string", "minLength": 1 },
+          "type": { "enum": ["sma", "ema", "rsi", "macd"] },
+          "params": {
+            "type": "object",
+            "additionalProperties": { "type": "number" }
+          }
+        }
+      }
+    },
+    "longEntry": { "$ref": "#/$defs/ruleGroup" },
+    "shortEntry": { "$ref": "#/$defs/ruleGroup" },
+    "exits": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["stopLossPct", "takeProfitPct"],
+      "properties": {
+        "stopLossPct": { "type": "number", "exclusiveMinimum": 0 },
+        "takeProfitPct": { "type": "number", "exclusiveMinimum": 0 }
+      }
+    }
+  },
+  "$defs": {
+    "ruleGroup": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["logic", "conditions"],
+      "properties": {
+        "logic": { "const": "and" },
+        "conditions": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/condition" }
+        }
+      }
+    },
+    "condition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["left", "op", "right"],
+      "properties": {
+        "left": { "$ref": "#/$defs/operand" },
+        "op": { "enum": [">", "<", ">=", "<="] },
+        "right": { "$ref": "#/$defs/operand" }
+      }
+    },
+    "operand": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "source"],
+          "properties": {
+            "kind": { "const": "price" },
+            "source": { "enum": ["close", "open", "high", "low"] }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "name"],
+          "properties": {
+            "kind": { "const": "indicator" },
+            "name": { "type": "string", "minLength": 1 },
+            "line": { "type": "string" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "value"],
+          "properties": {
+            "kind": { "const": "number" },
+            "value": { "type": "number" }
+          }
+        }
+      ]
+    }
+  }
+}
